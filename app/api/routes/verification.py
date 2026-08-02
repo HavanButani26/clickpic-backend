@@ -1,6 +1,8 @@
 from datetime import timedelta
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import Response
+from app.api.routes.auth import _issue_session
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,7 +13,7 @@ from app.core.email_templates import verification_code_email
 from app.core.otp import generate_otp
 from app.core.redis_client import redis_client
 from app.models.user import User
-from app.schemas.auth import MessageResponse
+from app.schemas.auth import MessageResponse, UserOut
 from app.schemas.verification import ResendCodeRequest, VerifyEmailRequest
 
 router = APIRouter(prefix="/api/v1/auth/verify-email", tags=["verification"])
@@ -87,10 +89,12 @@ async def resend_verification_code(
     return {"message": generic_message}
 
 
-@router.post("", response_model=MessageResponse)
+@router.post("", response_model=UserOut)
 async def verify_email(
-    payload: VerifyEmailRequest, db: AsyncSession = Depends(get_db)
-) -> dict:
+    payload: VerifyEmailRequest,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+) -> User:
     result = await db.execute(select(User).where(User.email == payload.email))
     user = result.scalar_one_or_none()
 
@@ -102,7 +106,9 @@ async def verify_email(
         raise invalid
 
     if user.is_verified:
-        return {"message": "Email already verified"}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified"
+        )
 
     attempts_key = f"{ATTEMPTS_PREFIX}{payload.email}"
     code_key = f"{CODE_PREFIX}{payload.email}"
@@ -126,8 +132,13 @@ async def verify_email(
     user.is_verified = True
     db.add(user)
     await db.commit()
+    await db.refresh(user)
 
     await redis_client.delete(code_key)
     await redis_client.delete(attempts_key)
 
-    return {"message": "Email verified successfully"}
+    # Verifying the code is itself proof of identity — establish a session
+    # immediately so the frontend can redirect straight in, same as login.
+    await _issue_session(response, user)
+
+    return user
