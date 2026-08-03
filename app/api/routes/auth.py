@@ -22,6 +22,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.models.studio import Studio
 from app.models.user import User
 from app.schemas.auth import LoginRequest, MessageResponse, RegisterRequest, UserOut
 
@@ -119,6 +120,14 @@ async def register(
     db.add(user)
     await db.commit()
     await db.refresh(user)
+
+    # Studio signups get a real Studio row immediately, owned by this user.
+    # Staff/role assignment isn't built yet — this just gives the data
+    # model something real to attach to going forward.
+    if payload.account_type == "studio":
+        studio = Studio(name=payload.studio_name, owner_id=user.id)
+        db.add(studio)
+        await db.commit()
 
     # Sending the code involves a real SMTP round-trip and can take a
     # couple of seconds — backgrounded so the client gets its 201 response

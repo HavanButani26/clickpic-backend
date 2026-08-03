@@ -2,11 +2,15 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
 from app.core.config import settings
 from app.core.database import Base
 from app.models.user import User  # noqa: F401 — registers the model on Base.metadata
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from app.models.studio import Studio  # noqa: F401
+from app.models.role import Role  # noqa: F401
+from app.models.studio_staff import StudioStaff  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

@@ -4,9 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     ENVIRONMENT: str = "development"
 
@@ -34,6 +32,13 @@ class Settings(BaseSettings):
     EMAIL_FROM_NAME: str = "ClickPic"
     EMAIL_FROM_ADDRESS: str = ""  # falls back to EMAIL_HOST_USER if left blank
 
+    # Logo shown in emails. Left blank by default so it derives from
+    # FRONTEND_URL — meaning it automatically resolves correctly once
+    # FRONTEND_URL is a real deployed domain, no code changes needed. Set
+    # this explicitly only if the logo ends up hosted somewhere separate
+    # from the frontend itself (e.g. a CDN).
+    LOGO_URL: str = ""
+
     # Email verification / password reset codes
     EMAIL_CODE_EXPIRE_MINUTES: int = 15
     EMAIL_RESEND_COOLDOWN_SECONDS: int = 30
@@ -44,6 +49,10 @@ class Settings(BaseSettings):
     def cookie_secure(self) -> bool:
         # Secure cookies require HTTPS. Off in local dev, on in production.
         return self.ENVIRONMENT == "production"
+
+    @property
+    def logo_url(self) -> str:
+        return self.LOGO_URL or f"{self.FRONTEND_URL}/logos/email-logo.png"
 
 
 @lru_cache

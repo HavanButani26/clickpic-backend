@@ -8,10 +8,10 @@ def _wrap(title: str, body_html: str) -> str:
     <html>
       <body style="{_BASE_STYLE}">
         <div style="max-width: 480px; margin: 0 auto; background: #0f1f3d; border-radius: 16px; overflow: hidden; border: 1px solid #16274a;">
-          <div style="background: linear-gradient(135deg, #007aff 0%, #8c52ff 100%); padding: 28px 32px;">
-            <span style="color: #ffffff; font-size: 22px; font-weight: 800;">ClickPic</span>
+          <div style="padding: 24px 32px; text-align: center;">
+            <img src="{settings.logo_url}" alt="ClickPic" width="140" style="display: block; margin: 0 auto; max-width: 140px; height: auto;" />
           </div>
-          <div style="padding: 32px;">
+          <div style="padding: 8px 32px 32px;">
             <h1 style="color: #f7f9fc; font-size: 20px; margin: 0 0 12px;">{title}</h1>
             {body_html}
             <p style="color: #a6b3d1; font-size: 12px; margin-top: 32px;">
